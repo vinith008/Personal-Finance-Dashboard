@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinTrack — Smart Personal Finance</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --card: #1a2234;
+    --border: #2a3550;
+    --accent: #00d4aa;
+    --accent2: #7c6fe0;
+    --red: #ff4d6d;
+    --text: #e8edf5;
+    --muted: #8892a4;
+    --glow: 0 0 40px rgba(0,212,170,0.15);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+  }
+
+  /* Floating orbs */
+  .orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; animation: drift 8s ease-in-out infinite alternate; }
+  .orb-1 { width: 500px; height: 500px; background: rgba(0,212,170,0.07); top: -150px; right: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: rgba(124,111,224,0.07); bottom: -100px; left: -100px; animation-delay: -4s; }
+  @keyframes drift { 0%{transform:translate(0,0)} 100%{transform:translate(30px,30px)} }
+
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 3rem; border-bottom: 1px solid var(--border); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+  .logo span { color: var(--accent); }
+  .nav-btns { display: flex; gap: 1rem; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 0.55rem 1.4rem; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; transition: all 0.2s; }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); border: none; color: #0a0e1a; padding: 0.55rem 1.4rem; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,212,170,0.4); }
+
+  /* HERO */
+  .hero { text-align: center; padding: 6rem 2rem 4rem; position: relative; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3); color: var(--accent); padding: 0.4rem 1rem; border-radius: 50px; font-size: 0.8rem; font-weight: 500; margin-bottom: 2rem; animation: fadeDown 0.6s ease; }
+  .hero-badge::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.5)} }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(2.8rem, 6vw, 5rem); font-weight: 800; line-height: 1.1; margin-bottom: 1.5rem; animation: fadeDown 0.7s ease 0.1s both; }
+  h1 .grad { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-sub { color: var(--muted); font-size: 1.15rem; max-width: 540px; margin: 0 auto 3rem; line-height: 1.7; animation: fadeDown 0.7s ease 0.2s both; }
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+  .hero-cta { display: flex; gap: 1rem; justify-content: center; animation: fadeDown 0.7s ease 0.3s both; }
+  .btn-lg { padding: 0.9rem 2.2rem; font-size: 1rem; border-radius: 10px; }
+
+  /* Stats strip */
+  .stats-strip { display: flex; justify-content: center; gap: 3rem; padding: 2.5rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 2rem 0; animation: fadeDown 0.7s ease 0.4s both; flex-wrap: wrap; }
+  .stat { text-align: center; }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .stat-label { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+
+  /* Features */
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 4rem 3rem; max-width: 1200px; margin: 0 auto; }
+  .feat-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; transition: all 0.3s; animation: fadeUp 0.6s ease both; }
+  .feat-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: var(--glow); }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+  .feat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem; }
+  .feat-card h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .feat-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 200; }
+  .modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 2.5rem; width: 100%; max-width: 420px; position: relative; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted); font-size: 1.4rem; cursor: pointer; }
+  .modal-close:hover { color: var(--text); }
+  .modal h2 { font-family: 'Syne', sans-serif; font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .modal p.sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .tab-switch { display: flex; gap: 0; margin-bottom: 1.5rem; background: var(--surface); border-radius: 10px; padding: 4px; }
+  .tab-btn { flex: 1; padding: 0.5rem; border: none; background: none; color: var(--muted); border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; }
+  .tab-btn.active { background: var(--accent); color: #0a0e1a; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem; }
+  .form-group input, .form-group select { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.7rem 1rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .btn-full { width: 100%; padding: 0.85rem; font-size: 1rem; margin-top: 0.5rem; border-radius: 10px; }
+  .msg { font-size: 0.85rem; padding: 0.6rem 1rem; border-radius: 8px; margin-top: 0.75rem; display: none; }
+  .msg.err { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); color: var(--red); display: block; }
+  .msg.ok  { background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3); color: var(--accent); display: block; }
+  footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<nav>
+  <div class="logo">Fin<span>Track</span></div>
+  <div class="nav-btns">
+    <button class="btn-ghost" onclick="openModal('login')">Sign In</button>
+    <button class="btn-primary" onclick="openModal('register')">Get Started</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">✦ AI-Powered Finance Intelligence</div>
+  <h1>Take Control of Your<br><span class="grad">Financial Future</span></h1>
+  <p class="hero-sub">Smart budgeting, ML-powered insights, and real-time analytics.</p>
+  <div class="hero-cta">
+    <button class="btn-primary btn-lg" onclick="openModal('register')">Start for Free →</button>
+    <button class="btn-ghost btn-lg" onclick="openModal('login')">Sign In</button>
+  </div>
+</section>
+
+<div class="stats-strip">
+  <div class="stat"><div class="stat-val">3,000+</div><div class="stat-label">Financial Records Analyzed</div></div>
+  <div class="stat"><div class="stat-val">3 ML</div><div class="stat-label">Prediction Models</div></div>
+  <div class="stat"><div class="stat-val">₹12K+</div><div class="stat-label">Avg Monthly Tracked</div></div>
+  <div class="stat"><div class="stat-val">95%</div><div class="stat-label">Accuracy on Stress Prediction</div></div>
+</div>
+
+<div class="features">
+  <div class="feat-card" style="animation-delay:0.1s">
+    <div class="feat-icon" style="background:rgba(0,212,170,0.15)">📊</div>
+    <h3>Smart Dashboard</h3>
+    <p>Visualize income vs expenses, savings trends, and spending categories with beautiful real-time charts.</p>
+  </div>
+  <div class="feat-card" style="animation-delay:0.2s">
+    <div class="feat-icon" style="background:rgba(124,111,224,0.15)">🤖</div>
+    <h3>ML Predictions</h3>
+    <p>Our Random Forest & Gradient Boosting models predict whether you'll meet savings goals and your stress level.</p>
+  </div>
+  <div class="feat-card" style="animation-delay:0.3s">
+    <div class="feat-icon" style="background:rgba(255,77,109,0.15)">💡</div>
+    <h3>Personalized Advice</h3>
+    <p>Get tailored financial tips based on your spending patterns, debt ratio, and investment habits.</p>
+  </div>
+  <div class="feat-card" style="animation-delay:0.4s">
+    <div class="feat-icon" style="background:rgba(0,212,170,0.15)">📱</div>
+    <h3>Transaction Tracking</h3>
+    <p>Log every transaction with category tags and watch your financial picture build in real time.</p>
+  </div>
+  <div class="feat-card" style="animation-delay:0.5s">
+    <div class="feat-icon" style="background:rgba(124,111,224,0.15)">📈</div>
+    <h3>Scenario Analysis</h3>
+    <p>Understand how inflation, recession, and normal scenarios affect your personal financial health score.</p>
+  </div>
+  <div class="feat-card" style="animation-delay:0.6s">
+    <div class="feat-icon" style="background:rgba(255,200,0,0.15)">🛡️</div>
+    <h3>Emergency Fund Tracker</h3>
+    <p>Monitor your safety net and get alerts when your emergency fund falls below recommended levels.</p>
+  </div>
+</div>
+
+<footer>© 2024 FinTrack · Built with Python, Flask & Machine Learning</footer>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2 id="modal-title">Welcome Back</h2>
+    <p class="sub" id="modal-sub">Sign in to your account</p>
+
+    <div class="tab-switch">
+      <button class="tab-btn" id="tab-login" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- Login form -->
+    <div id="form-login">
+      <div class="form-group"><label>Username</label><input id="l-user" type="text" placeholder="your_username"></div>
+      <div class="form-group"><label>Password</label><input id="l-pass" type="password" placeholder="••••••••"></div>
+      <button class="btn-primary btn-full" onclick="doLogin()">Sign In →</button>
+      <div class="msg" id="l-msg"></div>
+    </div>
+
+    <!-- Register form -->
+    <div id="form-register" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label>Full Name</label><input id="r-name" type="text" placeholder="Arjun Sharma"></div>
+        <div class="form-group"><label>Username</label><input id="r-user" type="text" placeholder="arjun123"></div>
+      </div>
+      <div class="form-group"><label>Email</label><input id="r-email" type="email" placeholder="arjun@email.com"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Monthly Income (₹)</label><input id="r-income" type="number" placeholder="50000"></div>
+        <div class="form-group"><label>Monthly Expense (₹)</label><input id="r-expense" type="number" placeholder="30000"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Savings Goal (₹)</label><input id="r-savings" type="number" placeholder="10000"></div>
+        <div class="form-group"><label>Credit Score</label><input id="r-credit" type="number" placeholder="750"></div>
+      </div>
+      <div class="form-group"><label>Password</label><input id="r-pass" type="password" placeholder="Create a strong password"></div>
+      <button class="btn-primary btn-full" onclick="doRegister()">Create Account →</button>
+      <div class="msg" id="r-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(tab) {
+  document.getElementById('modal').classList.add('open');
+  switchTab(tab);
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('form-login').style.display = isLogin ? '' : 'none';
+  document.getElementById('form-register').style.display = isLogin ? 'none' : '';
+  document.getElementById('tab-login').className = 'tab-btn' + (isLogin ? ' active' : '');
+  document.getElementById('tab-register').className = 'tab-btn' + (!isLogin ? ' active' : '');
+  document.getElementById('modal-title').textContent = isLogin ? 'Welcome Back' : 'Create Account';
+  document.getElementById('modal-sub').textContent = isLogin ? 'Sign in to your FinTrack account' : 'Start your financial journey today';
+}
+async function doLogin() {
+  const res = await fetch('/login', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ username: document.getElementById('l-user').value, password: document.getElementById('l-pass').value }) });
+  const d = await res.json();
+  const msg = document.getElementById('l-msg');
+  if (d.ok) { msg.className='msg ok'; msg.textContent='✓ Success! Redirecting…'; setTimeout(()=>location.href='/dashboard',800); }
+  else { msg.className='msg err'; msg.textContent=d.msg; }
+}
+async function doRegister() {
+  const res = await fetch('/register', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: document.getElementById('r-name').value,
+      username: document.getElementById('r-user').value,
+      email: document.getElementById('r-email').value,
+      password: document.getElementById('r-pass').value,
+      monthly_income: document.getElementById('r-income').value,
+      monthly_expense: document.getElementById('r-expense').value,
+      savings_goal: document.getElementById('r-savings').value,
+      credit_score: document.getElementById('r-credit').value
+    }) });
+  const d = await res.json();
+  const msg = document.getElementById('r-msg');
+  if (d.ok) { msg.className='msg ok'; msg.textContent='✓ Account created! Redirecting…'; setTimeout(()=>location.href='/dashboard',800); }
+  else { msg.className='msg err'; msg.textContent=d.msg; }
+}
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>

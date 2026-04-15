@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinTrack — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0a0e1a; --surface: #111827; --card: #1a2234; --border: #2a3550;
+  --accent: #00d4aa; --accent2: #7c6fe0; --red: #ff4d6d; --yellow: #f5a623;
+  --text: #e8edf5; --muted: #8892a4;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.5rem 0;position:fixed;height:100vh;z-index:50}
+.logo{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;padding:0 1.5rem 1.5rem;border-bottom:1px solid var(--border);margin-bottom:1rem}
+.logo span{color:var(--accent)}
+.nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.7rem 1.5rem;color:var(--muted);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;font-size:0.9rem}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(0,212,170,0.07)}
+.nav-icon{font-size:1.1rem;width:20px}
+.sidebar-bottom{margin-top:auto;padding:1rem 1.5rem;border-top:1px solid var(--border)}
+.user-pill{display:flex;align-items:center;gap:0.75rem}
+.avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;color:#0a0e1a}
+.user-name{font-size:0.85rem;font-weight:500}
+.user-email{font-size:0.75rem;color:var(--muted)}
+.logout-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:0.5rem;border-radius:8px;font-size:0.85rem;width:100%;text-align:left;margin-top:0.5rem;transition:all 0.2s}
+.logout-btn:hover{color:var(--red)}
+
+/* MAIN */
+.main{margin-left:240px;flex:1;padding:2rem;overflow-y:auto;min-height:100vh}
+.page{display:none}
+.page.active{display:block}
+
+/* Header */
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem}
+.page-title{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700}
+.page-sub{color:var(--muted);font-size:0.9rem;margin-top:0.2rem}
+
+/* KPI Cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;margin-bottom:2rem}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.4rem;position:relative;overflow:hidden;transition:all 0.3s}
+.kpi:hover{border-color:var(--accent);transform:translateY(-2px)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.green::before{background:var(--accent)} .kpi.purple::before{background:var(--accent2)}
+.kpi.red::before{background:var(--red)} .kpi.yellow::before{background:var(--yellow)}
+.kpi-icon{font-size:1.6rem;margin-bottom:0.75rem}
+.kpi-val{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:700;line-height:1}
+.kpi-label{color:var(--muted);font-size:0.8rem;margin-top:0.4rem}
+.kpi-change{font-size:0.78rem;margin-top:0.5rem}
+.kpi-change.pos{color:var(--accent)} .kpi-change.neg{color:var(--red)}
+
+/* Charts */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
+.chart-card.full{grid-column:1/-1}
+.chart-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:600;margin-bottom:1.2rem;display:flex;justify-content:space-between;align-items:center}
+.chart-badge{font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:400;color:var(--muted);background:var(--surface);border:1px solid var(--border);padding:0.25rem 0.7rem;border-radius:20px}
+.chart-wrap{position:relative;height:220px}
+
+/* ML Predictor */
+.predictor-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:1.5rem}
+.form-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
+.form-section h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:1.2rem}
+.fg{margin-bottom:0.85rem}
+.fg label{display:block;font-size:0.8rem;color:var(--muted);margin-bottom:0.35rem}
+.fg input,.fg select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:0.6rem 0.9rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.2s}
+.fg input:focus,.fg select:focus{border-color:var(--accent)}
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+.predict-btn{width:100%;padding:0.8rem;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;border-radius:10px;font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:0.5rem}
+.predict-btn:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(0,212,170,0.35)}
+
+/* Results panel */
+.results-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
+.results-panel h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:1.2rem}
+.result-metric{margin-bottom:1.2rem}
+.result-label{font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem}
+.result-val{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700}
+.progress-bar{width:100%;height:8px;background:var(--surface);border-radius:4px;overflow:hidden;margin-top:0.5rem}
+.progress-fill{height:100%;border-radius:4px;transition:width 0.8s ease;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.stress-badge{display:inline-block;padding:0.35rem 1rem;border-radius:20px;font-size:0.85rem;font-weight:600;margin-bottom:0.5rem}
+.stress-low{background:rgba(0,212,170,0.15);color:var(--accent)}
+.stress-med{background:rgba(245,166,35,0.15);color:var(--yellow)}
+.stress-high{background:rgba(255,77,109,0.15);color:var(--red)}
+.tips-list{margin-top:1rem}
+.tip{font-size:0.85rem;color:var(--text);padding:0.6rem 0.8rem;background:var(--surface);border-radius:8px;margin-bottom:0.5rem;border-left:3px solid var(--accent);line-height:1.5}
+.placeholder-msg{color:var(--muted);font-size:0.9rem;text-align:center;padding:2rem 0}
+
+/* Transactions */
+.txn-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
+.btn-sm{padding:0.5rem 1.2rem;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:500}
+.btn-accent{background:var(--accent);color:#0a0e1a}
+.btn-accent:hover{opacity:0.9}
+.txn-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;border:1px solid var(--border)}
+.txn-table th{padding:1rem;text-align:left;font-size:0.8rem;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);background:var(--surface)}
+.txn-table td{padding:0.9rem 1rem;border-bottom:1px solid rgba(42,53,80,0.5);font-size:0.88rem}
+.txn-table tr:last-child td{border-bottom:none}
+.txn-table tr:hover td{background:rgba(255,255,255,0.02)}
+.cat-pill{display:inline-block;padding:0.25rem 0.7rem;border-radius:20px;font-size:0.75rem;font-weight:500}
+.amt-pos{color:var(--accent);font-weight:600} .amt-neg{color:var(--red);font-weight:600}
+.empty-state{text-align:center;padding:3rem;color:var(--muted)}
+.empty-icon{font-size:3rem;margin-bottom:1rem}
+
+/* Add txn modal */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:200}
+.modal-ov.open{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:400px}
+.modal-box h3{font-family:'Syne',sans-serif;font-size:1.2rem;margin-bottom:1.2rem}
+.modal-actions{display:flex;gap:0.75rem;margin-top:1rem}
+.btn-cancel{flex:1;padding:0.7rem;background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-save{flex:1;padding:0.7rem;background:var(--accent);border:none;color:#0a0e1a;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
+
+/* Analytics page */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2rem;margin-bottom:1.5rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem;text-align:center}
+.stat-card .big{font-family:'Syne',sans-serif;font-size:2rem;font-weight:700;color:var(--accent)}
+.stat-card .label{color:var(--muted);font-size:0.8rem;margin-top:0.25rem}
+
+/* Spinner */
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(0,212,170,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Pulse loader */
+.loading-kpi{animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%,100%{opacity:0.5}50%{opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">Fin<span>Track</span></div>
+  <nav>
+    <div class="nav-item active" onclick="showPage('overview')"><span class="nav-icon">🏠</span>Overview</div>
+    <div class="nav-item" onclick="showPage('analytics')"><span class="nav-icon">📊</span>Analytics</div>
+    <div class="nav-item" onclick="showPage('predictor')"><span class="nav-icon">🤖</span>ML Predictor</div>
+    <div class="nav-item" onclick="showPage('transactions')"><span class="nav-icon">💳</span>Transactions</div>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="user-pill">
+      <div class="avatar" id="sidebar-avatar">?</div>
+      <div>
+        <div class="user-name" id="sidebar-name">Loading…</div>
+        <div class="user-email" id="sidebar-email">—</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="location.href='/logout'">⎋ Sign Out</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- OVERVIEW -->
+  <div class="page active" id="page-overview">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Financial Overview</div>
+        <div class="page-sub" id="greet-sub">Good to see you! Here's your summary.</div>
+      </div>
+      <div style="font-size:0.85rem;color:var(--muted)" id="date-display"></div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi green"><div class="kpi-icon">💰</div><div class="kpi-val" id="kpi-income">—</div><div class="kpi-label">Monthly Income</div><div class="kpi-change pos">Your profile data</div></div>
+      <div class="kpi red"><div class="kpi-icon">💸</div><div class="kpi-val" id="kpi-expense">—</div><div class="kpi-label">Monthly Expenses</div><div class="kpi-change neg" id="kpi-exp-pct">—</div></div>
+      <div class="kpi purple"><div class="kpi-icon">🎯</div><div class="kpi-val" id="kpi-savings">—</div><div class="kpi-label">Savings Goal</div><div class="kpi-change pos">Target per month</div></div>
+      <div class="kpi yellow"><div class="kpi-icon">⭐</div><div class="kpi-val" id="kpi-credit">—</div><div class="kpi-label">Credit Score</div><div class="kpi-change pos" id="kpi-credit-label">—</div></div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card full"><div class="chart-title">Income vs Expenses Trend<span class="chart-badge">Last 12 months · Dataset</span></div><div class="chart-wrap"><canvas id="chart-incexp"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Savings Trend<span class="chart-badge">Monthly avg</span></div><div class="chart-wrap"><canvas id="chart-savings"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Spending by Category<span class="chart-badge">Avg expense</span></div><div class="chart-wrap"><canvas id="chart-category"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="page" id="page-analytics">
+    <div class="page-header"><div><div class="page-title">Analytics & Insights</div><div class="page-sub">Dataset-wide patterns from 3,000+ records</div></div></div>
+
+    <div class="analytics-grid">
+      <div class="stat-card"><div class="big" id="a-income">—</div><div class="label">Avg Monthly Income</div></div>
+      <div class="stat-card"><div class="big" id="a-expense">—</div><div class="label">Avg Monthly Expense</div></div>
+      <div class="stat-card"><div class="big" id="a-savings">—</div><div class="label">Avg Actual Savings</div></div>
+      <div class="stat-card"><div class="big" id="a-credit">—</div><div class="label">Avg Credit Score</div></div>
+      <div class="stat-card"><div class="big" id="a-positive">—</div><div class="label">Positive Cash Flow %</div></div>
+      <div class="stat-card"><div class="big" id="a-goalmet">—</div><div class="label">Goal Met Rate</div></div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card"><div class="chart-title">Financial Stress Distribution<span class="chart-badge">All users</span></div><div class="chart-wrap"><canvas id="chart-stress"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Income Type Breakdown<span class="chart-badge">Dataset</span></div><div class="chart-wrap"><canvas id="chart-income-type"></canvas></div></div>
+      <div class="chart-card full"><div class="chart-title">Financial Scenarios Over Time<span class="chart-badge">Inflation · Normal · Recession</span></div><div class="chart-wrap"><canvas id="chart-scenarios"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- ML PREDICTOR -->
+  <div class="page" id="page-predictor">
+    <div class="page-header"><div><div class="page-title">ML Financial Predictor</div><div class="page-sub">Random Forest + Gradient Boosting models trained on 3,000+ records</div></div></div>
+
+    <div class="predictor-grid">
+      <div class="form-section">
+        <h3>📥 Your Financial Data</h3>
+        <div class="fg-row">
+          <div class="fg"><label>Monthly Income</label><input id="p-income" type="number" value="50000" placeholder="50000"></div>
+          <div class="fg"><label>Monthly Expense</label><input id="p-expense" type="number" value="35000" placeholder="35000"></div>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Savings Rate (0–1)</label><input id="p-savings-rate" type="number" value="0.25" step="0.01" min="0" max="1"></div>
+          <div class="fg"><label>Credit Score</label><input id="p-credit" type="number" value="700" min="300" max="900"></div>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Debt-to-Income Ratio</label><input id="p-dti" type="number" value="0.30" step="0.01" min="0" max="1"></div>
+          <div class="fg"><label>Loan Payment</label><input id="p-loan" type="number" value="5000"></div>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Investment Amount</label><input id="p-invest" type="number" value="3000"></div>
+          <div class="fg"><label>Emergency Fund</label><input id="p-emfund" type="number" value="50000"></div>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Subscriptions (#)</label><input id="p-subs" type="number" value="4" min="0"></div>
+          <div class="fg"><label>Transaction Count</label><input id="p-txncount" type="number" value="60"></div>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Discretionary Spend</label><input id="p-disc" type="number" value="8000"></div>
+          <div class="fg"><label>Essential Spend</label><input id="p-essential" type="number" value="20000"></div>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Rent / Mortgage</label><input id="p-rent" type="number" value="15000"></div>
+          <div class="fg"><label>Income Type</label>
+            <select id="p-income-type">
+              <option>Salary</option><option>Freelance</option><option>Mixed</option>
+            </select>
+          </div>
+        </div>
+        <button class="predict-btn" onclick="runPredict()">🤖 Run Predictions</button>
+      </div>
+
+      <div class="results-panel">
+        <h3>📈 Prediction Results</h3>
+        <div id="results-placeholder"><div class="placeholder-msg">🎯 Fill in your data and click<br>"Run Predictions" to see insights</div></div>
+        <div id="results-content" style="display:none">
+          <div class="result-metric">
+            <div class="result-label">Savings Goal Achievement Probability</div>
+            <div class="result-val" id="res-goal">—%</div>
+            <div class="progress-bar"><div class="progress-fill" id="res-goal-bar" style="width:0%"></div></div>
+          </div>
+          <div class="result-metric">
+            <div class="result-label">Financial Advice Score (0–100)</div>
+            <div class="result-val" id="res-advice">—</div>
+            <div class="progress-bar"><div class="progress-fill" id="res-advice-bar" style="width:0%"></div></div>
+          </div>
+          <div class="result-metric">
+            <div class="result-label">Predicted Financial Stress Level</div>
+            <div class="stress-badge" id="res-stress">—</div>
+          </div>
+          <div class="result-metric">
+            <div class="result-label">Personalized Tips</div>
+            <div class="tips-list" id="res-tips"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS -->
+  <div class="page" id="page-transactions">
+    <div class="txn-header">
+      <div><div class="page-title">Transactions</div><div class="page-sub">Track your income and expenses</div></div>
+      <button class="btn-sm btn-accent" onclick="openTxnModal()">+ Add Transaction</button>
+    </div>
+    <table class="txn-table">
+      <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Type</th><th>Amount</th></tr></thead>
+      <tbody id="txn-body"><tr><td colspan="5"><div class="empty-state"><div class="empty-icon">💳</div><div>No transactions yet</div><div style="font-size:0.8rem;margin-top:0.5rem">Add your first transaction above</div></div></td></tr></tbody>
+    </table>
+  </div>
+
+</main>
+
+<!-- Add Transaction Modal -->
+<div class="modal-ov" id="txn-modal">
+  <div class="modal-box">
+    <h3>Add Transaction</h3>
+    <div class="fg"><label>Description</label><input id="t-desc" type="text" placeholder="Grocery shopping"></div>
+    <div class="fg-row">
+      <div class="fg"><label>Amount (₹)</label><input id="t-amt" type="number" placeholder="1500"></div>
+      <div class="fg"><label>Type</label><select id="t-type"><option>Expense</option><option>Income</option></select></div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Category</label>
+        <select id="t-cat">
+          <option>Groceries</option><option>Rent</option><option>Transportation</option>
+          <option>Healthcare</option><option>Entertainment</option><option>Utilities</option>
+          <option>Dining Out</option><option>Education</option><option>Investments</option>
+          <option>Insurance</option><option>Salary</option><option>Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>Date</label><input id="t-date" type="date"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTxnModal()">Cancel</button>
+      <button class="btn-save" onclick="saveTransaction()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CAT_COLORS = {
+  'Groceries':'rgba(0,212,170,0.7)','Rent':'rgba(124,111,224,0.7)','Transportation':'rgba(245,166,35,0.7)',
+  'Healthcare':'rgba(255,77,109,0.7)','Entertainment':'rgba(52,199,143,0.7)','Utilities':'rgba(80,150,255,0.7)',
+  'Dining Out':'rgba(255,140,80,0.7)','Education':'rgba(200,80,255,0.7)','Investments':'rgba(0,212,170,0.5)',
+  'Insurance':'rgba(180,200,80,0.7)','Salary':'rgba(0,212,170,0.9)'
+};
+
+let charts = {};
+
+// ─── Page navigation ─────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if(name==='analytics') loadAnalytics();
+  if(name==='transactions') loadTransactions();
+}
+
+// ─── Init ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async ()=>{
+  document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
+
+  const prof = await fetch('/api/profile').then(r=>r.json());
+  document.getElementById('sidebar-name').textContent = prof.name || prof.username;
+  document.getElementById('sidebar-email').textContent = prof.email || 'FinTrack User';
+  document.getElementById('sidebar-avatar').textContent = (prof.name||'U')[0].toUpperCase();
+  document.getElementById('greet-sub').textContent = `Welcome back, ${prof.name || 'there'}! Here's your summary.`;
+
+  const income = prof.monthly_income || 50000;
+  const expense = prof.monthly_expense || 30000;
+  const savings = prof.savings_goal || 10000;
+  const credit = prof.credit_score || 700;
+  const expPct = ((expense/income)*100).toFixed(1);
+
+  document.getElementById('kpi-income').textContent = '₹'+income.toLocaleString('en-IN');
+  document.getElementById('kpi-expense').textContent = '₹'+expense.toLocaleString('en-IN');
+  document.getElementById('kpi-savings').textContent = '₹'+savings.toLocaleString('en-IN');
+  document.getElementById('kpi-credit').textContent = credit;
+  document.getElementById('kpi-exp-pct').textContent = expPct+'% of income';
+  document.getElementById('kpi-credit-label').textContent = credit>=750?'Excellent':credit>=700?'Good':credit>=650?'Fair':'Needs Work';
+
+  // Pre-fill predictor
+  document.getElementById('p-income').value = income;
+  document.getElementById('p-expense').value = expense;
+  document.getElementById('p-credit').value = credit;
+  document.getElementById('p-rent').value = Math.round(expense * 0.4);
+
+  await loadOverviewCharts();
+});
+
+// ─── Charts ───────────────────────────────────────────────────────
+const chartDefaults = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{labels:{color:'#8892a4',font:{family:'DM Sans',size:11}}}},
+  scales:{x:{ticks:{color:'#8892a4',font:{size:10}},grid:{color:'rgba(42,53,80,0.5)'}},
+          y:{ticks:{color:'#8892a4',font:{size:10}},grid:{color:'rgba(42,53,80,0.5)'}}}
+};
+
+async function loadOverviewCharts() {
+  const [ie, sv, cat] = await Promise.all([
+    fetch('/api/chart/income_vs_expense').then(r=>r.json()),
+    fetch('/api/chart/savings_trend').then(r=>r.json()),
+    fetch('/api/chart/spending_by_category').then(r=>r.json()),
+  ]);
+
+  charts.incexp = new Chart(document.getElementById('chart-incexp'),{
+    type:'line',
+    data:{labels:ie.labels,datasets:[
+      {label:'Income',data:ie.income,borderColor:'#00d4aa',backgroundColor:'rgba(0,212,170,0.1)',tension:0.4,fill:true,pointRadius:3},
+      {label:'Expense',data:ie.expense,borderColor:'#ff4d6d',backgroundColor:'rgba(255,77,109,0.08)',tension:0.4,fill:true,pointRadius:3}
+    ]},
+    options:{...chartDefaults}
+  });
+
+  charts.savings = new Chart(document.getElementById('chart-savings'),{
+    type:'bar',
+    data:{labels:sv.labels,datasets:[{label:'Avg Savings',data:sv.values,backgroundColor:'rgba(124,111,224,0.7)',borderRadius:6}]},
+    options:{...chartDefaults}
+  });
+
+  const catKeys = Object.keys(cat); const catVals = Object.values(cat);
+  charts.category = new Chart(document.getElementById('chart-category'),{
+    type:'doughnut',
+    data:{labels:catKeys,datasets:[{data:catVals,backgroundColor:catKeys.map(k=>CAT_COLORS[k]||'rgba(120,120,160,0.6)'),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8892a4',font:{family:'DM Sans',size:10}}}}}
+  });
+}
+
+async function loadAnalytics() {
+  if(charts.stress) return; // already loaded
+  const [stats, stress, cat] = await Promise.all([
+    fetch('/api/stats').then(r=>r.json()),
+    fetch('/api/chart/stress_dist').then(r=>r.json()),
+    fetch('/api/chart/spending_by_category').then(r=>r.json()),
+  ]);
+
+  document.getElementById('a-income').textContent = '₹'+Math.round(stats.avg_income).toLocaleString('en-IN');
+  document.getElementById('a-expense').textContent = '₹'+Math.round(stats.avg_expense).toLocaleString('en-IN');
+  document.getElementById('a-savings').textContent = '₹'+Math.round(stats.avg_savings).toLocaleString('en-IN');
+  document.getElementById('a-credit').textContent = Math.round(stats.avg_credit);
+  document.getElementById('a-positive').textContent = stats.positive_flow+'%';
+  document.getElementById('a-goalmet').textContent = stats.goal_met_pct+'%';
+
+  charts.stress = new Chart(document.getElementById('chart-stress'),{
+    type:'pie',
+    data:{labels:Object.keys(stress),datasets:[{data:Object.values(stress),backgroundColor:['rgba(0,212,170,0.8)','rgba(245,166,35,0.8)','rgba(255,77,109,0.8)'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8892a4',font:{size:11}}}}}
+  });
+
+  const inc = stats.income_types;
+  charts.inctype = new Chart(document.getElementById('chart-income-type'),{
+    type:'doughnut',
+    data:{labels:Object.keys(inc),datasets:[{data:Object.values(inc),backgroundColor:['rgba(0,212,170,0.8)','rgba(124,111,224,0.8)','rgba(245,166,35,0.8)'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8892a4',font:{size:11}}}}}
+  });
+
+  const scen = stats.scenarios;
+  charts.scenarios = new Chart(document.getElementById('chart-scenarios'),{
+    type:'bar',
+    data:{labels:Object.keys(scen),datasets:[{label:'Records',data:Object.values(scen),backgroundColor:['rgba(0,212,170,0.7)','rgba(124,111,224,0.7)','rgba(255,77,109,0.7)'],borderRadius:8}]},
+    options:{...chartDefaults,plugins:{legend:{display:false}}}
+  });
+}
+
+// ─── ML Predictor ────────────────────────────────────────────────
+async function runPredict() {
+  const btn = document.querySelector('.predict-btn');
+  btn.innerHTML = '<span class="spinner"></span> Analyzing…';
+  btn.disabled = true;
+
+  const payload = {
+    monthly_income: +document.getElementById('p-income').value,
+    monthly_expense: +document.getElementById('p-expense').value,
+    savings_rate: +document.getElementById('p-savings-rate').value,
+    credit_score: +document.getElementById('p-credit').value,
+    debt_to_income: +document.getElementById('p-dti').value,
+    loan_payment: +document.getElementById('p-loan').value,
+    investment_amount: +document.getElementById('p-invest').value,
+    emergency_fund: +document.getElementById('p-emfund').value,
+    subscription_services: +document.getElementById('p-subs').value,
+    transaction_count: +document.getElementById('p-txncount').value,
+    discretionary_spending: +document.getElementById('p-disc').value,
+    essential_spending: +document.getElementById('p-essential').value,
+    rent_or_mortgage: +document.getElementById('p-rent').value,
+    income_type: document.getElementById('p-income-type').value
+  };
+
+  const res = await fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const d = await res.json();
+
+  document.getElementById('results-placeholder').style.display='none';
+  document.getElementById('results-content').style.display='block';
+  document.getElementById('res-goal').textContent = d.goal_probability+'%';
+  document.getElementById('res-goal-bar').style.width = d.goal_probability+'%';
+  document.getElementById('res-advice').textContent = d.advice_score+' / 100';
+  document.getElementById('res-advice-bar').style.width = d.advice_score+'%';
+
+  const stEl = document.getElementById('res-stress');
+  stEl.textContent = d.stress_level;
+  stEl.className = 'stress-badge stress-'+({Low:'low',Medium:'med',High:'high'}[d.stress_level]||'med');
+
+  const tipsEl = document.getElementById('res-tips');
+  tipsEl.innerHTML = d.tips.map(t=>`<div class="tip">${t}</div>`).join('');
+
+  btn.innerHTML = '🤖 Run Predictions';
+  btn.disabled = false;
+}
+
+// ─── Transactions ─────────────────────────────────────────────────
+function openTxnModal(){ document.getElementById('txn-modal').classList.add('open') }
+function closeTxnModal(){ document.getElementById('txn-modal').classList.remove('open') }
+
+async function saveTransaction() {
+  const txn = {
+    date: document.getElementById('t-date').value,
+    description: document.getElementById('t-desc').value || 'Transaction',
+    category: document.getElementById('t-cat').value,
+    type: document.getElementById('t-type').value,
+    amount: +document.getElementById('t-amt').value
+  };
+  if(!txn.amount){ alert('Please enter an amount'); return; }
+  await fetch('/api/add_transaction',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(txn)});
+  closeTxnModal();
+  loadTransactions();
+  // Clear form
+  document.getElementById('t-desc').value='';
+  document.getElementById('t-amt').value='';
+}
+
+async function loadTransactions() {
+  const txns = await fetch('/api/transactions').then(r=>r.json());
+  const tbody = document.getElementById('txn-body');
+  if(!txns.length){
+    tbody.innerHTML=`<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">💳</div><div>No transactions yet</div><div style="font-size:0.8rem;margin-top:0.5rem">Add your first transaction above</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = txns.slice().reverse().map(t=>{
+    const isInc = t.type==='Income';
+    const color = CAT_COLORS[t.category]||'rgba(120,120,160,0.6)';
+    return `<tr>
+      <td>${t.date}</td>
+      <td>${t.description}</td>
+      <td><span class="cat-pill" style="background:${color.replace('0.7','0.15')};color:${color.replace(/rgba\(([^)]+)\)/,(_,c)=>`rgb(${c.split(',').slice(0,3).join(',')})`).replace(',0.7)',',1)')}">${t.category}</span></td>
+      <td><span style="color:${isInc?'var(--accent)':'var(--muted)'}">${t.type}</span></td>
+      <td class="${isInc?'amt-pos':'amt-neg'}">${isInc?'+':'-'}₹${(+t.amount).toLocaleString('en-IN')}</td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('txn-modal').addEventListener('click',function(e){if(e.target===this)closeTxnModal()});
+</script>
+</body>
+</html>
